@@ -1,27 +1,23 @@
-FlapPyBird-MPC
+Hierarchical Predictive Learning for FlappyBird
 ===============
 
-![A happy flappy boy](flappy_bird.gif)
+![A happy flappy boy](FlappyBirdHPL.mp4)
 
-A Mixed Integer Programming model predictive controller for a [Flappy Bird Clone](https://github.com/sourabhv/FlapPyBird). The meat of the controller is found in `mip.py`. Most of the rest is unmodified from the original flappy bird clone.
+This code builds on a [Mixed Integer Programming](https://github.com/philzook58/FlapPyBird-MPC) approach for a [Flappy Bird Clone](https://github.com/sourabhv/FlapPyBird). 
 
-Blog posts describing the approach can be found here:
+The task is to steer a small flappy bird around a series of pipe obstacles by controlling the timing of its wing flaps.
+The pipe obstacles come in pairs from the bottom and top of the screen, leaving a gap for the bird to carefully fly through. As the bird moves through the task, it sees only a fixed distance ahead: the screen only the shows the two upcoming pairs of pipes.
+The strategy behind Flappy Bird lies in planning short-term trajectories that are robust to randomness in the heights of the future pipe obstacles still hidden beyond the screen.
 
-- http://www.philipzucker.com/flappy-bird-as-a-mixed-integer-program/
-- http://blog.benwiener.com/programming/2019/10/06/flappy-bird-mpc.html
+Here we use [Hierarchical Predictive Learning](https://arxiv.org/abs/2005.05948) to solve the game. Hierarchical Predictive Learning (HPL) is a data-driven control scheme based on high-level strategies.
+Using stored task data from solving previous games, we learn strategies in the form of target sets in a reduced-order state space. 
+These strategies are applied to the new task in real-time using a forecast of the upcoming environment, and the resulting output is used as a terminal region by a low-level MIP receding horizon controller. 
 
-We wrote a controller for the 2013 smash-hit game Flappy Bird using a model predictive control approach where the model is phrased as a mixed integer program. You can see the result in the above video. The red line shows our controller's planned route, which changes as new obstacles come into view. I'll break this all down a little bit.
+In a trial of 50 tasks (new games), the Hierarchical Predictive Learning controller earned a mean score nearly 6x higher (161) than the original Mixed Integer Program (28). 
+This improvement is the result of incorporating the learned strategy as well as additional reachability-based safety constraints. 
 
-Model predictive control is a method of control where you model the system out to a finite horizon and optimize the trajectory with respect to the series of inputs. Then you act according to the first step in your optimal input and repeat the process at the next time step with a little bit of new information.
-
-We expressed the model as a mixed integer linear program, an optimization problem with linear constraints and objective functions where all or some of the variables can be integers or booleans. In this case, the constraints impose both the physics of the game—ballistic motion with discrete impulses from flaps—and the objective of avoiding the pipes, floor, and ceiling. The input in this case are a series of booleans describing whether or not the bird jumps in each time step. We implemented the model in CVXPY, a Python package and domain-specific modeling language for convex optimization problems.
-
-We forked Sourabh Verma's Pygame implementation of Flappy Bird and hacked it up a bit. At each time step, Flappy Bird calls our function for input. It passes the current state to our controller, which updates the initial conditions and pipe positions, solves for a trajectory, and returns the first action from its optimal input.
-
-This technique works pretty well. It doesn't quite run in real time with the lookahead set to a distance that allows it to succeed. We used a neat trick to improve the speed and look ahead distance. The model's time step increases with look ahead time. In other words, the model is precise for its first few time steps, and gets less careful later in its prediction. The thinking is that this allows it to make approximate long term plans about jump timing without over-taxing the solver. 
-
-How-to (as tested on MacOS)
+Running Code
 ---------------------------
 
 1. Install pygame, cvxpy, gurobi, numpy. 
-2. `python flappy.py` hit space and watch her go.
+2. `python flappy_pred.py`
