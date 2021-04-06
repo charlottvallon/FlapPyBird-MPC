@@ -20,3 +20,8 @@ Running Code
 
 1. Install pygame, cvxpy, gurobi, numpy. 
 2. `python flappy_pred.py`
+
+
+Citing Work
+---------------------------
+1. Charlott Vallon and Francesco Borrelli. "Data-driven hierarchical predictive learning in unknown environments." In IEEE CASE (2020).
